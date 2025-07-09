@@ -1,87 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Camcookie AI Platform</title>
-<style>
-  body { background:#111; color:#0f0; font-family: monospace; padding:20px; max-width:900px; margin:auto; }
-  textarea, input, select { background:#222; color:#0f0; border:1px solid #0f0; width:100%; font-size:16px; padding:10px; margin-top:10px; }
-  button { background:#0f0; border:none; color:#000; padding:10px 20px; font-weight:bold; cursor:pointer; margin-top:10px; }
-  button:hover { background:#0c0; }
-  pre { background:#000; padding:10px; white-space:pre-wrap; min-height:80px; margin-top:10px; }
-  img, audio, video { max-width:100%; display:block; margin-top:10px; border:1px solid #0f0; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Camcookie AI</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0099ff 0%, #1e293b 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 2rem 0 1rem 0;
+            text-align: center;
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #0099ff;
+        }
+        .tagline {
+            font-size: 1.3rem;
+            margin-top: 0.5rem;
+            color: #f1f5f9;
+        }
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.85);
+            border-radius: 1rem;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.2);
+            max-width: 400px;
+            text-align: center;
+        }
+        .cta-btn {
+            margin-top: 2rem;
+            padding: 0.8rem 2rem;
+            background: #0099ff;
+            color: #fff;
+            border: none;
+            border-radius: 2rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .cta-btn:hover {
+            background: #007acc;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem 0;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            background: transparent;
+        }
+    </style>
 </head>
 <body>
-<h1>Camcookie AI Platform</h1>
-<p><strong>Mode:</strong></p>
-<select id="mode">
-  <option value="text">Text / Code</option>
-  <option value="image">Image</option>
-  <option value="audio">Audio (mp3)</option>
-  <option value="video">Video (mp4)</option>
-  <option value="correct">Spell/Grammar Check</option>
-</select>
-
-<p><strong>Prompt:</strong></p>
-<textarea id="prompt" rows="4" placeholder="Type something smart, weird, or creative..."></textarea>
-<button onclick="generate()">Run AI</button>
-
-<pre id="output"></pre>
-<img id="img-output" />
-<audio id="audio-output" controls></audio>
-<video id="video-output" controls></video>
-<a id="download-link" download style="display:none; color:#0f0; text-decoration:underline;">Download file</a>
-
-<script>
-const API = window.location.origin + "/generate";
-
-async function generate() {
-  const mode = document.getElementById("mode").value;
-  const prompt = document.getElementById("prompt").value;
-  const out = document.getElementById("output");
-  const img = document.getElementById("img-output");
-  const audio = document.getElementById("audio-output");
-  const video = document.getElementById("video-output");
-  const download = document.getElementById("download-link");
-  out.textContent = "Loading...";
-  img.src = "";
-  audio.src = "";
-  video.src = "";
-  download.style.display = "none";
-
-  try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode, prompt, max_length: 150 })
-    });
-    const data = await res.json();
-
-    if (mode === "text" || mode === "correct") {
-      out.textContent = data.response;
-    }
-    if (mode === "image") {
-      img.src = "data:image/png;base64," + data.response;
-    }
-    if (mode === "audio") {
-      audio.src = "data:audio/mp3;base64," + data.audio_base64;
-      download.href = audio.src;
-      download.download = "ai-audio.mp3";
-      download.textContent = "Download MP3";
-      download.style.display = "block";
-    }
-    if (mode === "video") {
-      video.src = "data:video/mp4;base64," + data.video_base64;
-      download.href = video.src;
-      download.download = "ai-video.mp4";
-      download.textContent = "Download MP4";
-      download.style.display = "block";
-    }
-  } catch (e) {
-    out.textContent = "Error: " + e.message;
-  }
-}
-</script>
+    <header>
+        <div class="logo">Camcookie AI</div>
+        <div class="tagline">Your personal AI assistant for productivity and creativity</div>
+    </header>
+    <main>
+        <div class="card">
+            <h2>Welcome to Camcookie AI</h2>
+            <p>
+                Experience the next generation of AI—designed for individuals and professionals.<br>
+                Boost your workflow, generate ideas, and get intelligent assistance, all in one place.
+            </p>
+            <a href="https://camcookie876.github.io/AI/AI" class="cta-btn">Get Started</a>
+        </div>
+    </main>
 </body>
 </html>

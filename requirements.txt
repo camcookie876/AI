@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-jose[cryptography]
+passlib[bcrypt]
+transformers
+diffusers
+tortoise-tts
+ffmpeg-python
+pillow

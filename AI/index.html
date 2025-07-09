@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camcookie AI</title>
+  <style>
+    body { margin:0; font-family:sans-serif; display:flex; height:100vh; }
+    #auth, aside, main { padding:1rem; }
+    #auth { margin:auto; width:300px; background:#f5f5f5; border:1px solid #ccc; }
+    #auth input { width:100%; margin:0.5rem 0; padding:0.5rem; }
+    #auth button { width:48%; margin:0.5rem 1%; padding:0.5rem; }
+    #app { display:none; width:100%; height:100%; }
+    aside { width:220px; background:#222; color:#eee; }
+    main { flex:1; display:flex; flex-direction:column; }
+    #chat { flex:1; overflow:auto; background:#fafafa; padding:1rem; }
+    #input-area { display:flex; padding:0.5rem; }
+    #prompt { flex:1; padding:0.5rem; margin-right:0.5rem; }
+    button { padding:0.5rem 1rem; }
+    #console { display:none; background:#333; color:#0f0; padding:1rem;
+               height:200px; overflow:auto; margin-top:0.5rem; }
+    .visible { display:block; }
+  </style>
+</head>
+<body>
+
+  <!-- Authentication Panel -->
+  <div id="auth">
+    <h2>Camcookie AI</h2>
+    <input id="auth-username" placeholder="Username" />
+    <input id="auth-password" type="password" placeholder="Password" />
+    <div>
+      <button id="register-btn">Register</button>
+      <button id="login-btn">Login</button>
+    </div>
+    <div id="auth-msg" style="color:red;"></div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app">
+    <aside>
+      <h3 id="user-display"></h3>
+      <button id="logout-btn">Logout</button><br>
+      <button id="toggle-console">Dev Console</button>
+      <pre id="console"></pre>
+    </aside>
+    <main>
+      <div id="chat"></div>
+      <div id="input-area">
+        <textarea id="prompt" rows="2" placeholder="Type your message…"></textarea>
+        <button id="send">Send</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+  (function() {
+    let token = null, username = null;
+
+    const api = path => "/" + path;
+    const show = (el, flag) => el.style.display = flag ? "" : "none";
+
+    // Auth elements
+    const authDiv = document.getElementById("auth");
+    const msg = document.getElementById("auth-msg");
+    const uInput = document.getElementById("auth-username");
+    const pInput = document.getElementById("auth-password");
+    const regBtn = document.getElementById("register-btn");
+    const logBtn = document.getElementById("login-btn");
+
+    // App elements
+    const appDiv = document.getElementById("app");
+    const userDisplay = document.getElementById("user-display");
+    const logoutBtn = document.getElementById("logout-btn");
+    const chatDiv = document.getElementById("chat");
+    const promptInput = document.getElementById("prompt");
+    const sendBtn = document.getElementById("send");
+    const consoleEl = document.getElementById("console");
+    const toggleBtn = document.getElementById("toggle-console");
+
+    // Toggle dev console
+    toggleBtn.onclick = () => {
+      consoleEl.classList.toggle("visible");
+      if (consoleEl.classList.contains("visible")) fetchConsole();
+    };
+
+    // Register
+    regBtn.onclick = async () => {
+      msg.textContent = "";
+      const body = new URLSearchParams({
+        username: uInput.value,
+        password: pInput.value
+      });
+      const res = await fetch(api("register"), {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body
+      });
+      if (res.ok) {
+        msg.style.color = "green";
+        msg.textContent = "Registered! Please log in.";
+      } else {
+        msg.style.color = "red";
+        msg.textContent = (await res.json()).detail;
+      }
+    };
+
+    // Login
+    logBtn.onclick = async () => {
+      msg.textContent = "";
+      const body = new URLSearchParams({
+        username: uInput.value,
+        password: pInput.value
+      });
+      const res = await fetch(api("token"), {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body
+      });
+      if (!res.ok) {
+        msg.textContent = (await res.json()).detail;
+        return;
+      }
+      const data = await res.json();
+      token = data.access_token;
+      username = uInput.value;
+      startApp();
+    };
+
+    // Logout
+    logoutBtn.onclick = () => {
+      token = null; username = null;
+      chatDiv.innerHTML = "";
+      show(appDiv, false);
+      show(authDiv, true);
+    };
+
+    // Initialize app UI
+    function startApp() {
+      userDisplay.textContent = "User: " + username;
+      show(authDiv, false);
+      show(appDiv, true);
+    }
+
+    // Fetch memory for console
+    async function fetchConsole() {
+      const res = await fetch(api("memory"), {
+        headers: { Authorization: "Bearer " + token }
+      });
+      consoleEl.textContent = JSON.stringify(await res.json(), null, 2);
+    }
+
+    // Send a message
+    sendBtn.onclick = async () => {
+      const text = promptInput.value;
+      appendChat("> " + text);
+      promptInput.value = "";
+      const res = await fetch(api("generate-text"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify({ prompt: text })
+      });
+      const data = await res.json();
+      appendChat(data.text);
+    };
+
+    // Append chat line
+    function appendChat(txt) {
+      const div = document.createElement("div");
+      div.textContent = txt;
+      chatDiv.appendChild(div);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    // At load
+    show(appDiv, false);
+  })();
+  </script>
+</body>
+</html>
