@@ -2,460 +2,187 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Camcookie AI</title>
+  <title>Camcookie AI – Code & Crawl</title>
   <style>
     body {
       margin: 0;
-      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-family: sans-serif;
+      background: #202123;
+      color: #e5e5e5;
       height: 100vh;
       display: flex;
-      background: #202123;
-      overflow: hidden;
-    }
-
-    /* Sidebar */
-    #sidebar {
-      width: 260px;
-      background: #343541;
-      color: #d1d5db;
-      display: flex;
       flex-direction: column;
-      transition: transform 0.3s ease;
     }
-    #sidebar.hidden {
-      transform: translateX(-260px);
-    }
-    #sidebar header {
-      padding: 1rem;
-      font-size: 1.2rem;
-      color: #fff;
-      text-align: center;
-      border-bottom: 1px solid #4b5563;
-    }
-    #sidebar .btn {
-      margin: 0.5rem 1rem;
-      padding: 0.75rem;
+    #controls {
       background: #40414f;
-      border: none;
-      border-radius: 4px;
-      color: #d1d5db;
-      text-align: left;
-      cursor: pointer;
-    }
-    #sidebar .btn:hover { background: #4b5563; }
-    #sidebar .link {
-      margin: 0.5rem 1rem;
-      color: #d1d5db;
-      text-decoration: none;
       padding: 0.5rem;
-      border-radius: 4px;
-    }
-    #sidebar .link:hover { background: #40414f; }
-    #sidebar footer {
-      margin-top: auto;
-      padding: 1rem;
-      font-size: 0.8rem;
-      color: #6b7280;
-      text-align: center;
-    }
-
-    /* Main chat area */
-    #main {
-      flex: 1;
       display: flex;
-      flex-direction: column;
-    }
-    #chat {
-      flex: 1;
-      padding: 1.5rem;
-      overflow-y: auto;
-      box-sizing: border-box;
-    }
-    .message { display: flex; margin-bottom: 1rem; }
-    .message.user { justify-content: flex-end; }
-    .message.ai   { justify-content: flex-start; }
-    .message .bubble {
-      max-width: 60%;
-      padding: 0.75rem 1rem;
-      border-radius: 12px;
-      line-height: 1.5;
-    }
-    .message.user .bubble { background: #40414f; color: #fff; }
-    .message.ai   .bubble { background: #11a37f; color: #fff; }
-
-    /* Input bar */
-    #inputBar {
-      display: flex;
-      padding: 0.5rem 1rem;
-      background: #40414f;
       align-items: center;
-      box-sizing: border-box;
+      gap: 0.5rem;
     }
-    #toggleSidebar {
-      font-size: 1.5rem;
-      background: none;
+    select, input[type="text"], textarea, button {
+      font-size: 1rem;
+      border-radius: 4px;
       border: none;
-      color: #d1d5db;
-      cursor: pointer;
-      margin-right: 0.5rem;
     }
-    #prompt {
-      flex: 1;
+    select, input[type="text"], textarea {
+      padding: 0.5rem;
       background: #2a2b32;
-      border: none;
-      color: #fff;
-      padding: 0.75rem;
-      border-radius: 4px;
-      resize: none;
-      margin-right: 0.5rem;
-      font-size: 0.95rem;
-      box-sizing: border-box;
+      color: #e5e5e5;
     }
-    #sendBtn {
-      padding: 0.75rem 1rem;
+    textarea {
+      flex: 2;
+      resize: vertical;
+    }
+    input[type="text"].url-field {
+      flex: 1.5;
+      display: none;
+    }
+    button {
+      padding: 0.5rem 1rem;
       background: #11a37f;
-      border: none;
-      border-radius: 4px;
       color: #fff;
       cursor: pointer;
     }
-    #sendBtn:disabled {
+    button:disabled {
       opacity: 0.5;
       cursor: default;
     }
-
-    /* Auth Modal */
-    #authModal {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-    #authBox {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 8px;
-      width: 320px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-      text-align: center;
-    }
-    #authBox h2 {
-      margin-top: 0;
-      color: #002b5c;
-    }
-    #authBox input {
-      width: 100%;
-      padding: 0.75rem;
-      margin: 0.5rem 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      background: #17171c;
       box-sizing: border-box;
-      font-size: 0.95rem;
     }
-    #authBox button {
-      width: 48%;
-      padding: 0.75rem;
-      margin: 0.5rem 1%;
-      border: none;
+    .message {
+      margin-bottom: 1rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .message.user {
+      justify-content: flex-end;
+    }
+    .message.ai {
+      justify-content: flex-start;
+    }
+    .bubble {
+      max-width: 70%;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+    .message.user .bubble {
+      background: #40414f;
+      color: #fff;
+    }
+    .message.ai .bubble {
       background: #11a37f;
       color: #fff;
+    }
+    img.crawl-img {
+      max-width: 200px;
       border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-    #authMsg {
-      height: 1.2rem;
-      color: red;
-      font-size: 0.9rem;
-    }
-
-    /* Global Error Modal */
-    #errorModal {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 20;
-    }
-    #errorBox {
-      background: #fff;
-      padding: 1.5rem;
-      border-radius: 8px;
-      max-width: 300px;
-      text-align: center;
-    }
-    #errorBox p {
-      margin-bottom: 1rem;
-      color: #333;
-    }
-    #errorClose {
-      padding: 0.5rem 1rem;
-      background: #e53e3e;
-      border: none;
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <aside id="sidebar">
-    <header>Camcookie AI</header>
-    <button id="newChat" class="btn">+ New Chat</button>
-    <div id="chatList"></div>
-    <a href="/PLUS/index.html" target="_blank" class="link">Gallery</a>
-    <button id="shareChatsBtn" class="btn">Shared Chats</button>
-    <button id="editMemoryBtn" class="btn">Edit Memory</button>
-    <footer>© 2025 Camcookie AI</footer>
-  </aside>
+  <!-- Chat Display -->
+  <div id="chat"></div>
 
-  <!-- Main Chat -->
-  <div id="main">
-    <div id="chat"></div>
-    <div id="inputBar">
-      <button id="toggleSidebar">☰</button>
-      <textarea id="prompt" rows="1" placeholder="Send a message..."></textarea>
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
+  <!-- Controls: Mode + Optional URL + Prompt + Send -->
+  <div id="controls">
+    <select id="mode">
+      <option value="code">Code Generation</option>
+      <option value="crawl">Web Crawl</option>
+    </select>
 
-  <!-- Authentication Modal -->
-  <div id="authModal">
-    <div id="authBox">
-      <h2>Welcome</h2>
-      <input id="authUsername" placeholder="Username">
-      <input id="authPassword" type="password" placeholder="Password">
-      <div>
-        <button id="loginBtn">Login</button>
-        <button id="registerBtn">Register</button>
-      </div>
-      <div id="authMsg"></div>
-    </div>
-  </div>
+    <input id="urlInput" class="url-field" type="text"
+           placeholder="Optional: Enter URL for context…" />
 
-  <!-- Global Error Modal -->
-  <div id="errorModal">
-    <div id="errorBox">
-      <p id="errorMsg"></p>
-      <button id="errorClose">OK</button>
-    </div>
+    <textarea id="input" rows="1"
+              placeholder="Your prompt or URL…"></textarea>
+
+    <button id="send">Send</button>
   </div>
 
   <script>
-  (function(){
-    let token = "", username = "";
+    const chatEl = document.getElementById("chat");
+    const modeEl = document.getElementById("mode");
+    const urlEl  = document.getElementById("urlInput");
+    const inEl   = document.getElementById("input");
+    const btn    = document.getElementById("send");
 
-    const chatDiv       = document.getElementById("chat");
-    const authModal     = document.getElementById("authModal");
-    const authMsg       = document.getElementById("authMsg");
-    const authUser      = document.getElementById("authUsername");
-    const authPass      = document.getElementById("authPassword");
-    const loginBtn      = document.getElementById("loginBtn");
-    const registerBtn   = document.getElementById("registerBtn");
-    const sendBtn       = document.getElementById("sendBtn");
-    const promptInput   = document.getElementById("prompt");
-    const toggleSidebar = document.getElementById("toggleSidebar");
-    const sidebar       = document.getElementById("sidebar");
-    const errorModal    = document.getElementById("errorModal");
-    const errorMsg      = document.getElementById("errorMsg");
-    const errorClose    = document.getElementById("errorClose");
-    const shareChatsBtn = document.getElementById("shareChatsBtn");
-    const editMemoryBtn = document.getElementById("editMemoryBtn");
-
-    function appendMsg(who, text) {
-      const container = document.createElement("div");
-      container.className = "message " + who;
+    function append(user, html) {
+      const msg = document.createElement("div");
+      msg.className = "message " + user;
       const bubble = document.createElement("div");
       bubble.className = "bubble";
-      bubble.innerHTML = text;
-      container.appendChild(bubble);
-      chatDiv.appendChild(container);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
+      bubble.innerHTML = html;
+      msg.appendChild(bubble);
+      chatEl.appendChild(msg);
+      chatEl.scrollTop = chatEl.scrollHeight;
     }
 
-    function showError(msg) {
-      errorMsg.textContent = msg;
-      errorModal.style.display = "flex";
-    }
-
-    function hideError() {
-      errorModal.style.display = "none";
-    }
-
-    errorClose.addEventListener("click", hideError);
-    errorModal.addEventListener("click", hideError);
-    document.getElementById("errorBox")
-      .addEventListener("click", e => e.stopPropagation());
-
-    function logout() {
-      token = "";
-      username = "";
-      authModal.style.display = "flex";
-      chatDiv.innerHTML = "";
-    }
-
-    async function apiFetch(path, opts={}) {
-      opts.headers = opts.headers || {};
-      if (token) opts.headers['Authorization'] = 'Bearer ' + token;
-      const res = await fetch(path, opts);
-      if (res.status === 401) {
-        logout();
-        showError("Session expired. Please log in again.");
-        throw new Error("Unauthorized");
+    modeEl.addEventListener("change", () => {
+      if (modeEl.value === "code") {
+        urlEl.style.display = "block";
+      } else {
+        urlEl.style.display = "none";
       }
-      return res;
-    }
+    });
 
-    registerBtn.onclick = async () => {
-      authMsg.textContent = "";
-      const body = new URLSearchParams({
-        username: authUser.value,
-        password: authPass.value
-      });
-      const res = await fetch("/register", {
+    btn.onclick = async () => {
+      const mode = modeEl.value;
+      const text = inEl.value.trim();
+      if (!text) return;
+
+      append("user", text);
+      inEl.value = "";
+      btn.disabled = true;
+
+      let route = mode === "code" ? "/generate-code" : "/crawl";
+      let body = mode === "code"
+        ? JSON.stringify({ prompt: text, url: urlEl.value.trim() })
+        : JSON.stringify({ url: text });
+
+      const res = await fetch(route, {
         method: "POST",
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        headers: { "Content-Type": "application/json" },
         body
       });
-      const j = await res.json();
-      if (res.ok) {
-        authMsg.style.color = "green";
-        authMsg.textContent = "Registered! You can now log in.";
-      } else {
-        authMsg.style.color = "red";
-        authMsg.textContent = j.detail || "Registration failed.";
-      }
-    };
 
-    loginBtn.onclick = async () => {
-      authMsg.textContent = "";
-      const body = new URLSearchParams({
-        username: authUser.value,
-        password: authPass.value
-      });
-      const res = await fetch("/token", {
-        method: "POST",
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body
-      });
-      const j = await res.json();
-      if (res.ok) {
-        token = j.access_token;
-        username = authUser.value;
-        authModal.style.display = "none";
+      if (!res.ok) {
+        const err = await res.json();
+        append("ai", `<strong>Error:</strong> ${err.detail||res.statusText}`);
       } else {
-        authMsg.style.color = "red";
-        authMsg.textContent = j.detail || "Login failed.";
-      }
-    };
-
-    sendBtn.onclick = async () => {
-      const txt = promptInput.value.trim();
-      if (!txt) return;
-      appendMsg("user", txt);
-      promptInput.value = "";
-      try {
-        const res = await apiFetch("/generate-text", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({prompt: txt})
-        });
-        const j = await res.json();
-        if (!res.ok) {
-          showError(j.detail || "Failed to generate response.");
+        const data = await res.json();
+        if (mode === "code") {
+          append("ai", `<pre style="background:#17171c;color:#e5e5e5;
+            padding:0.5rem;border-radius:4px;">${data.code}</pre>`);
         } else {
-          appendMsg("ai", j.text);
+          // show paragraphs
+          data.paragraphs.forEach(p => append("ai", p));
+          // show images
+          data.images.forEach(src => {
+            append("ai", `<img class="crawl-img" src="${src}" />`);
+          });
         }
-      } catch (e) {
-        console.error(e);
       }
+
+      btn.disabled = false;
     };
 
-    promptInput.addEventListener("keydown", e => {
+    // Submit on Enter
+    inEl.addEventListener("keydown", e => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        sendBtn.click();
+        btn.click();
       }
     });
-
-    toggleSidebar.onclick = () => {
-      sidebar.classList.toggle("hidden");
-    };
-
-    // Drag & drop file support (maps to /upload)
-    promptInput.addEventListener("dragover", e => e.preventDefault());
-    promptInput.addEventListener("drop", async e => {
-      e.preventDefault();
-      const f = e.dataTransfer.files[0];
-      if (!f) return;
-
-      const ext = f.name.split(".").pop().toLowerCase();
-      if (ext === "pdf") {
-        showError("PDF uploads are not supported here.");
-        return;
-      }
-
-      const fd = new FormData();
-      fd.append("file", f);
-      try {
-        const res = await apiFetch("/upload", {
-          method: "POST",
-          body: fd
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          showError(data.error || "Upload failed.");
-          return;
-        }
-
-        let html;
-        if (f.type.startsWith("image/")) {
-          html = `<img src="${data.url}" style="max-width:200px;border-radius:4px;">`;
-        } else if (f.type.startsWith("audio/")) {
-          html = `<audio controls src="${data.url}"></audio>`;
-        } else if (f.type.startsWith("video/")) {
-          html = `<video controls width="240" src="${data.url}"></video>`;
-        } else {
-          html = `<a href="${data.url}" target="_blank">${data.filename}</a>`;
-        }
-        appendMsg("user", html);
-
-      } catch(e) {
-        console.error(e);
-      }
-    });
-
-    // Shared Chats & Edit Memory require Plus plan
-    shareChatsBtn.onclick = async () => {
-      const res = await apiFetch("/premium-action");
-      const data = await res.json();
-      if (!res.ok) {
-        showError(data.error || "Cannot access Shared Chats.");
-      } else {
-        appendMsg("ai", "Here are your shared chats (not implemented).");
-      }
-    };
-
-    editMemoryBtn.onclick = async () => {
-      const res = await apiFetch("/premium-action");
-      const data = await res.json();
-      if (!res.ok) {
-        showError(data.error || "Cannot access Edit Memory.");
-      } else {
-        appendMsg("ai", "Memory editor opened (not implemented).");
-      }
-    };
-
-  })();
   </script>
 </body>
 </html>
