@@ -12,6 +12,7 @@
       background: #202123;
       overflow: hidden;
     }
+
     /* Sidebar */
     #sidebar {
       width: 260px;
@@ -49,9 +50,7 @@
       padding: 0.5rem;
       border-radius: 4px;
     }
-    #sidebar .link:hover {
-      background: #40414f;
-    }
+    #sidebar .link:hover { background: #40414f; }
     #sidebar footer {
       margin-top: auto;
       padding: 1rem;
@@ -74,21 +73,15 @@
     }
     .message { display: flex; margin-bottom: 1rem; }
     .message.user { justify-content: flex-end; }
-    .message.ai { justify-content: flex-start; }
+    .message.ai   { justify-content: flex-start; }
     .message .bubble {
       max-width: 60%;
       padding: 0.75rem 1rem;
       border-radius: 12px;
       line-height: 1.5;
     }
-    .message.user .bubble {
-      background: #40414f;
-      color: #fff;
-    }
-    .message.ai .bubble {
-      background: #11a37f;
-      color: #fff;
-    }
+    .message.user .bubble { background: #40414f; color: #fff; }
+    .message.ai   .bubble { background: #11a37f; color: #fff; }
 
     /* Input bar */
     #inputBar {
@@ -174,7 +167,42 @@
       cursor: pointer;
       font-size: 0.95rem;
     }
-    #authMsg { height: 1.2rem; color: red; font-size: 0.9rem; }
+    #authMsg {
+      height: 1.2rem;
+      color: red;
+      font-size: 0.9rem;
+    }
+
+    /* Global Error Modal */
+    #errorModal {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    #errorBox {
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      max-width: 300px;
+      text-align: center;
+    }
+    #errorBox p {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+    #errorClose {
+      padding: 0.5rem 1rem;
+      background: #e53e3e;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -214,6 +242,14 @@
     </div>
   </div>
 
+  <!-- Global Error Modal -->
+  <div id="errorModal">
+    <div id="errorBox">
+      <p id="errorMsg"></p>
+      <button id="errorClose">OK</button>
+    </div>
+  </div>
+
   <script>
   (function(){
     let token = "", username = "";
@@ -229,6 +265,11 @@
     const promptInput   = document.getElementById("prompt");
     const toggleSidebar = document.getElementById("toggleSidebar");
     const sidebar       = document.getElementById("sidebar");
+    const errorModal    = document.getElementById("errorModal");
+    const errorMsg      = document.getElementById("errorMsg");
+    const errorClose    = document.getElementById("errorClose");
+    const shareChatsBtn = document.getElementById("shareChatsBtn");
+    const editMemoryBtn = document.getElementById("editMemoryBtn");
 
     function appendMsg(who, text) {
       const container = document.createElement("div");
@@ -241,22 +282,37 @@
       chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
-    async function apiFetch(path, opts={}) {
-      opts.headers = opts.headers || {};
-      if (token) opts.headers['Authorization'] = 'Bearer ' + token;
-      const res = await fetch(path, opts);
-      if (res.status === 401) {
-        logout();
-        throw new Error("Unauthorized");
-      }
-      return res;
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorModal.style.display = "flex";
     }
+
+    function hideError() {
+      errorModal.style.display = "none";
+    }
+
+    errorClose.addEventListener("click", hideError);
+    errorModal.addEventListener("click", hideError);
+    document.getElementById("errorBox")
+      .addEventListener("click", e => e.stopPropagation());
 
     function logout() {
       token = "";
       username = "";
       authModal.style.display = "flex";
       chatDiv.innerHTML = "";
+    }
+
+    async function apiFetch(path, opts={}) {
+      opts.headers = opts.headers || {};
+      if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(path, opts);
+      if (res.status === 401) {
+        logout();
+        showError("Session expired. Please log in again.");
+        throw new Error("Unauthorized");
+      }
+      return res;
     }
 
     registerBtn.onclick = async () => {
@@ -270,13 +326,13 @@
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
         body
       });
+      const j = await res.json();
       if (res.ok) {
         authMsg.style.color = "green";
-        authMsg.textContent = "Registered!";
+        authMsg.textContent = "Registered! You can now log in.";
       } else {
-        const j = await res.json();
         authMsg.style.color = "red";
-        authMsg.textContent = j.detail;
+        authMsg.textContent = j.detail || "Registration failed.";
       }
     };
 
@@ -291,14 +347,14 @@
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
         body
       });
+      const j = await res.json();
       if (res.ok) {
-        const j = await res.json();
         token = j.access_token;
         username = authUser.value;
         authModal.style.display = "none";
       } else {
-        const j = await res.json();
-        authMsg.textContent = j.detail;
+        authMsg.style.color = "red";
+        authMsg.textContent = j.detail || "Login failed.";
       }
     };
 
@@ -307,13 +363,21 @@
       if (!txt) return;
       appendMsg("user", txt);
       promptInput.value = "";
-      const res = await apiFetch("/generate-text", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({prompt: txt})
-      });
-      const j = await res.json();
-      appendMsg("ai", j.text);
+      try {
+        const res = await apiFetch("/generate-text", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({prompt: txt})
+        });
+        const j = await res.json();
+        if (!res.ok) {
+          showError(j.detail || "Failed to generate response.");
+        } else {
+          appendMsg("ai", j.text);
+        }
+      } catch (e) {
+        console.error(e);
+      }
     };
 
     promptInput.addEventListener("keydown", e => {
@@ -327,34 +391,69 @@
       sidebar.classList.toggle("hidden");
     };
 
-    // Drag & drop file support (no PDFs)
+    // Drag & drop file support (maps to /upload)
     promptInput.addEventListener("dragover", e => e.preventDefault());
     promptInput.addEventListener("drop", async e => {
       e.preventDefault();
       const f = e.dataTransfer.files[0];
+      if (!f) return;
+
       const ext = f.name.split(".").pop().toLowerCase();
-      if (ext === "pdf") return;
+      if (ext === "pdf") {
+        showError("PDF uploads are not supported here.");
+        return;
+      }
+
       const fd = new FormData();
       fd.append("file", f);
-      const res = await apiFetch("/upload-file", {
-        method: "POST",
-        body: fd
-      });
-      const data = await res.json();
-      let html;
-      if (f.type.startsWith("image/")) {
-        html = `<img src="${data.url}" style="max-width:200px;border-radius:4px;">`;
-      } else if (f.type.startsWith("audio/")) {
-        html = `<audio controls src="${data.url}"></audio>`;
-      } else if (f.type.startsWith("video/")) {
-        html = `<video controls width="240" src="${data.url}"></video>`;
-      } else {
-        html = `<a href="${data.url}" target="_blank">${data.filename}</a>`;
+      try {
+        const res = await apiFetch("/upload", {
+          method: "POST",
+          body: fd
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || "Upload failed.");
+          return;
+        }
+
+        let html;
+        if (f.type.startsWith("image/")) {
+          html = `<img src="${data.url}" style="max-width:200px;border-radius:4px;">`;
+        } else if (f.type.startsWith("audio/")) {
+          html = `<audio controls src="${data.url}"></audio>`;
+        } else if (f.type.startsWith("video/")) {
+          html = `<video controls width="240" src="${data.url}"></video>`;
+        } else {
+          html = `<a href="${data.url}" target="_blank">${data.filename}</a>`;
+        }
+        appendMsg("user", html);
+
+      } catch(e) {
+        console.error(e);
       }
-      appendMsg("user", html);
     });
 
-    // Other buttons (new chat, shared chats, edit memory) to be wired similarly
+    // Shared Chats & Edit Memory require Plus plan
+    shareChatsBtn.onclick = async () => {
+      const res = await apiFetch("/premium-action");
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || "Cannot access Shared Chats.");
+      } else {
+        appendMsg("ai", "Here are your shared chats (not implemented).");
+      }
+    };
+
+    editMemoryBtn.onclick = async () => {
+      const res = await apiFetch("/premium-action");
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || "Cannot access Edit Memory.");
+      } else {
+        appendMsg("ai", "Memory editor opened (not implemented).");
+      }
+    };
 
   })();
   </script>
